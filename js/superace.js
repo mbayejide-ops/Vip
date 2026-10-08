@@ -40,21 +40,23 @@ function adjustBet(val) {
     }
 }
 
-// Strict Luck Logic Execution
-function getRandomSymbol() {
+// Strict Rigged Luck Generator
+function getRandomSymbol(colIndex = 0) {
     const userLuck = localStorage.getItem("userLuck") || "normal";
     let rand = Math.random() * 100;
 
-    if (userLuck === "high") {
+    if (userLuck === "low") {
+        // Low Luck: Alternating column pattern so 3-reel alignment never completes
+        if (colIndex === 0) return SYMBOLS[3]; // Card A
+        if (colIndex === 1) return SYMBOLS[4]; // Card K
+        if (colIndex === 2) return SYMBOLS[5]; // Card Q
+        if (colIndex === 3) return SYMBOLS[3]; // Card A
+        return SYMBOLS[4];                     // Card K
+    } else if (userLuck === "high") {
         if (rand < 20) return SYMBOLS[7];  // Scatter 20%
         if (rand < 40) return SYMBOLS[6];  // Wild 20%
         if (rand < 65) return SYMBOLS[0];  // Cherry 25%
         return SYMBOLS[1];                 // Lemon
-    } else if (userLuck === "low") {
-        // Low luck user-er jonno Scatter/Wild 0% probability + low value symbols
-        if (rand < 40) return SYMBOLS[3];  // Card A
-        if (rand < 70) return SYMBOLS[4];  // Card K
-        return SYMBOLS[5];                 // Card Q
     } else {
         if (rand < 5) return SYMBOLS[7];   // Scatter 5%
         if (rand < 12) return SYMBOLS[6];  // Wild 7%
@@ -72,7 +74,7 @@ function initGrid() {
     for (let r = 0; r < ROWS; r++) {
         let row = [];
         for (let c = 0; c < COLS; c++) {
-            row.push({ ...getRandomSymbol(), opacity: 1, scale: 1 });
+            row.push({ ...getRandomSymbol(c), opacity: 1, scale: 1 });
         }
         grid.push(row);
     }
@@ -224,6 +226,11 @@ async function processCascades(betVal) {
 }
 
 function checkWinningCombinations() {
+    const userLuck = localStorage.getItem("userLuck") || "normal";
+    if (userLuck === "low") {
+        return { winAmount: 0, winningPositions: [] }; // Force 0 Win
+    }
+
     let winningPositions = [];
     let baseWinRatio = 0;
 
@@ -293,13 +300,16 @@ function applyCascadeGravity() {
         }
         for (let r = 0; r < ROWS; r++) {
             if (grid[r][c] === null) {
-                grid[r][c] = { ...getRandomSymbol(), opacity: 1, scale: 1 };
+                grid[r][c] = { ...getRandomSymbol(c), opacity: 1, scale: 1 };
             }
         }
     }
 }
 
 async function checkScatters() {
+    const userLuck = localStorage.getItem("userLuck") || "normal";
+    if (userLuck === "low") return; // Completely disable bonus for low luck
+
     let scatterCount = 0;
     for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
