@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Gold Arcade — Home</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">GOLD<span>ARCADE</span></div>
+    <div class="top-actions">
+      <div class="coin-pill">🪙 <span id="coins">0</span></div>
+      <button id="logout" class="logout">Logout</button>
+    </div>
+  </header>
+
+  <nav class="categories">
+    <button class="cat active">🔥 Popular</button>
+    <button class="cat">🎯 Arcade</button>
+    <button class="cat">⚡ Action</button>
+    <button class="cat">🏆 Top Score</button>
+  </nav>
+
+  <main class="container">
+    <section class="welcome">
+      <div>
+        <p class="eyebrow">WELCOME BACK</p>
+        <h1 id="welcomeName">Player</h1>
+        <p>Choose a game and collect virtual coins.</p>
+      </div>
+      <div class="balance">
+        <span>COIN BALANCE</span>
+        <strong>🪙 <span id="balance">0</span></strong>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Games</h2>
+        <span id="gameCount"></span>
+      </div>
+      <div id="games" class="game-grid"></div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <a class="selected" href="home.html">⌂<span>Home</span></a>
+    <a href="#">🎁<span>Rewards</span></a>
+    <a href="#">👥<span>Invite</span></a>
+    <a href="#">👑<span>Profile</span></a>
+  </nav>
+
+  <script src="data/games.js"></script>
+  <script>
+    const user = JSON.parse(localStorage.getItem('ga_user') || 'null');
+    if (!user) location.href = 'index.html';
+
+    const coinsEl = document.getElementById('coins');
+    const balanceEl = document.getElementById('balance');
+    const nameEl = document.getElementById('welcomeName');
+    const gamesEl = document.getElementById('games');
+
+    nameEl.textContent = user ? (user.name || user.username) : 'Player';
+
+    function updateCoins() {
+      const coins = Number(localStorage.getItem('ga_coins') || 0);
+      coinsEl.textContent = coins.toLocaleString();
+      balanceEl.textContent = coins.toLocaleString();
+    }
+
+    document.getElementById('gameCount').textContent = `${GAMES.length} games`;
+
+    GAMES.forEach(game => {
+      const card = document.createElement('a');
+      card.className = 'game-card';
+      card.href = game.path;
+      card.innerHTML = `
+        <div class="game-image-wrap">
+          <img src="${game.icon}" alt="${game.name}" onerror="this.style.display='none'; this.parentElement.classList.add('fallback')">
+          <span class="badge">${game.badge || 'ARCADE'}</span>
+          <span class="star">★</span>
+        </div>
+        <div class="game-info">
+          <h3>${game.name}</h3>
+          <p>${game.description}</p>
+        </div>`;
+      gamesEl.appendChild(card);
+    });
+
+    document.getElementById('logout').onclick = () => {
+      localStorage.removeItem('ga_user');
+      location.href = 'index.html';
+    };
+    updateCoins();
+  </script>
+</body>
+</html>
