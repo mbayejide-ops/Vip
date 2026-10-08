@@ -18,7 +18,6 @@ let isWaiting = false;
 let countdownTimer = 5;
 let progress = 0;
 
-// Dynamic History Initializer
 let historyData = Array.from({ length: 15 }, () => (Math.random() * (12 - 1.1) + 1.1).toFixed(2) + "x");
 let fakePlayers = [];
 
@@ -27,7 +26,6 @@ renderHistory();
 drawStaticStage();
 startWaitingPhase();
 
-// Render History with Color Logic: (1-2x Blue, 2-10x Purple, 10-100x Red)
 function renderHistory() {
     const histContainer = document.getElementById("history");
     histContainer.innerHTML = "";
@@ -58,7 +56,6 @@ function adjustBet(val) {
     }
 }
 
-// Random Username Generator (Different First Letters)
 function getRandomUsername() {
     const chars = "abcdefghijklmnopqrstuvwxyz";
     const char1 = chars.charAt(Math.floor(Math.random() * chars.length));
@@ -189,7 +186,6 @@ function handleGameAction() {
     }
 }
 
-// Multiplier Color Switcher
 function updateMultiplierColor(mult) {
     const multText = document.getElementById("multiplier");
     
@@ -199,6 +195,19 @@ function updateMultiplierColor(mult) {
         multText.className = "overlay-multiplier mult-purple";
     } else {
         multText.className = "overlay-multiplier mult-blue";
+    }
+}
+
+// Calculate target multiplier based on logged in user's luck
+function getCrashPointBasedOnLuck() {
+    const userLuck = localStorage.getItem("userLuck") || "normal";
+
+    if (userLuck === "high") {
+        return (Math.random() * (100.00 - 10.00) + 10.00).toFixed(2); // 10x - 100x
+    } else if (userLuck === "low") {
+        return (Math.random() * (1.80 - 1.05) + 1.05).toFixed(2);    // Early crash: 1.05x - 1.80x
+    } else {
+        return (Math.random() * (50.00 - 3.00) + 3.00).toFixed(2);    // 3x - 50x
     }
 }
 
@@ -230,8 +239,8 @@ function startFlight() {
     currentMultiplier = 1.00;
     progress = 0;
     
-    // Target multiplier between 3.00x and 100.00x
-    targetMultiplier = (Math.random() * (100.00 - 3.00) + 3.00).toFixed(2);
+    // Set luck-based crash target
+    targetMultiplier = getCrashPointBasedOnLuck();
 
     const multText = document.getElementById("multiplier");
     const btn = document.getElementById("main-btn");
@@ -250,9 +259,7 @@ function startFlight() {
 
         multText.innerText = currentMultiplier.toFixed(2) + "x";
 
-        // Update Multiplier Color Live
         updateMultiplierColor(currentMultiplier);
-
         updateFakePlayersLive();
 
         const endX = canvas.width - 40;
@@ -299,4 +306,4 @@ function crashGame() {
 function updateBalance() {
     localStorage.setItem("userBalance", balance);
     document.getElementById("bal").innerText = balance.toFixed(2);
-        }
+                        }
