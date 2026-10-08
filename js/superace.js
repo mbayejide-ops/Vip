@@ -40,21 +40,21 @@ function adjustBet(val) {
     }
 }
 
-// Get Random Symbol based on user luck settings
+// Strict Luck Logic Execution
 function getRandomSymbol() {
     const userLuck = localStorage.getItem("userLuck") || "normal";
     let rand = Math.random() * 100;
 
     if (userLuck === "high") {
-        if (rand < 15) return SYMBOLS[7];  // Scatter 15%
-        if (rand < 35) return SYMBOLS[6];  // Wild 20%
-        if (rand < 55) return SYMBOLS[0];  // Cherry 20%
+        if (rand < 20) return SYMBOLS[7];  // Scatter 20%
+        if (rand < 40) return SYMBOLS[6];  // Wild 20%
+        if (rand < 65) return SYMBOLS[0];  // Cherry 25%
         return SYMBOLS[1];                 // Lemon
     } else if (userLuck === "low") {
-        if (rand < 1) return SYMBOLS[7];   // Scatter 1%
-        if (rand < 5) return SYMBOLS[6];   // Wild 4%
-        if (rand < 50) return SYMBOLS[4];  // Card K 45%
-        return SYMBOLS[5];                 // Card Q 50%
+        // Low luck user-er jonno Scatter/Wild 0% probability + low value symbols
+        if (rand < 40) return SYMBOLS[3];  // Card A
+        if (rand < 70) return SYMBOLS[4];  // Card K
+        return SYMBOLS[5];                 // Card Q
     } else {
         if (rand < 5) return SYMBOLS[7];   // Scatter 5%
         if (rand < 12) return SYMBOLS[6];  // Wild 7%
