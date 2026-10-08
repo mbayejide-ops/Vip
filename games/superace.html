@@ -24,12 +24,74 @@
         /* Free Spin Status Bar */
         .freespin-status { background: #d9381e; color: #fff; text-align: center; font-weight: bold; font-size: 13px; padding: 4px; display: none; }
 
-        /* Slot Machine Canvas */
+        /* Slot Machine Canvas Area */
         .stage-container { position: relative; width: 100%; height: 320px; background: #0b0c12; overflow: hidden; }
         canvas { width: 100%; height: 100%; display: block; }
 
         /* Win Text Overlay */
-        .win-overlay { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 32px; font-weight: 900; color: #00ff66; text-shadow: 0 0 15px #00ff66, 0 0 30px #000; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+        .win-overlay { position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%); font-size: 32px; font-weight: 900; color: #00ff66; text-shadow: 0 0 15px #00ff66, 0 0 30px #000; pointer-events: none; opacity: 0; transition: opacity 0.3s; z-index: 5; }
+
+        /* Custom In-Game Bonus Popup Overlay */
+        .bonus-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .bonus-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .bonus-card {
+            background: linear-gradient(135deg, #1f1a24 0%, #0e0f17 100%);
+            border: 2px solid #ffb400;
+            border-radius: 16px;
+            padding: 25px 20px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 180, 0, 0.5);
+            transform: scale(0.5);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 85%;
+        }
+
+        .bonus-overlay.active .bonus-card {
+            transform: scale(1);
+        }
+
+        .bonus-title {
+            font-size: 16px;
+            color: #ff3366;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+
+        .bonus-spins-text {
+            font-size: 36px;
+            font-weight: 900;
+            color: #ffb400;
+            text-shadow: 0 0 15px rgba(255, 180, 0, 0.8);
+            margin: 10px 0;
+            text-transform: uppercase;
+        }
+
+        .bonus-subtitle {
+            font-size: 13px;
+            color: #ccc;
+        }
 
         /* Controls Area */
         .controls-panel { padding: 15px; background: #181a26; display: flex; flex-direction: column; gap: 12px; }
@@ -72,6 +134,15 @@
         <div class="stage-container">
             <canvas id="slotCanvas"></canvas>
             <div id="win-text" class="win-overlay">+৳0</div>
+
+            <!-- In-game Animated Bonus Banner -->
+            <div id="bonus-overlay" class="bonus-overlay">
+                <div class="bonus-card">
+                    <div id="bonus-scatters-count" class="bonus-title">🎉 3 SCATTERS!</div>
+                    <div id="bonus-spins-val" class="bonus-spins-text">5 FREE SPINS</div>
+                    <div class="bonus-subtitle">BONUS ROUND WON</div>
+                </div>
+            </div>
         </div>
 
         <!-- Controls -->
@@ -105,4 +176,4 @@
 
     <script src="../js/superace.js"></script>
 </body>
-  </html>
+</html>
