@@ -1,7 +1,6 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// Canvas Auto Resize
 function resizeCanvas() {
     canvas.width = canvas.parentElement.clientWidth;
     canvas.height = canvas.parentElement.clientHeight;
@@ -11,16 +10,18 @@ window.addEventListener("resize", resizeCanvas);
 
 let balance = parseFloat(localStorage.getItem("userBalance")) || 500;
 let currentMultiplier = 1.00;
-let targetMultiplier = 2.09;
+let targetMultiplier = 3.00;
 let animationId = null;
 let isPlaying = false;
 let hasBetted = false;
-let progress = 0; // 0 to 1 for curve animation
+let progress = 0;
 
 let historyData = ["2.05x", "1.37x", "11.20x", "1.01x", "5.50x", "1.18x", "1.71x", "4.44x", "1.91x", "15.77x", "2.17x", "1.17x", "1.00x", "2.46x", "1.23x"];
+let fakePlayers = [];
 
 document.getElementById("bal").innerText = balance.toFixed(2);
 renderHistory();
+generateFakePlayers();
 drawStaticStage();
 
 function renderHistory() {
@@ -38,17 +39,68 @@ function renderHistory() {
 function adjustBet(val) {
     const input = document.getElementById("bet-amount");
     let curr = parseInt(input.value) || 10;
-    if (curr + val >= 5) {
-        input.value = curr + val;
+    let nextVal = curr + val;
+    if (nextVal >= 1 && nextVal <= 10000) {
+        input.value = nextVal;
     }
+}
+
+// Generate 50+ Fake Users
+function generateFakePlayers() {
+    fakePlayers = [];
+    for (let i = 0; i < 55; i++) {
+        let randSuffix = Math.floor(100 + Math.random() * 900);
+        let uname = `b*****f${randSuffix}`;
+        let betAmount = Math.floor(Math.random() * (10000 - 50 + 1)) + 50;
+        let cashoutAt = (Math.random() * (targetMultiplier - 1.10) + 1.10).toFixed(2);
+
+        fakePlayers.push({
+            username: uname,
+            bet: betAmount,
+            cashoutAt: parseFloat(cashoutAt),
+            hasCashedOut: false,
+            winAmount: 0
+        });
+    }
+    renderFakePlayers();
+}
+
+function renderFakePlayers() {
+    const list = document.getElementById("bets-list");
+    list.innerHTML = "";
+
+    fakePlayers.forEach(p => {
+        const row = document.createElement("div");
+        row.className = "bet-item";
+        
+        let winCol = p.hasCashedOut 
+            ? `<span class="win-val">৳${p.winAmount.toFixed(2)}</span>` 
+            : `<span class="pending-val">-</span>`;
+
+        row.innerHTML = `
+            <span class="user-name">${p.username}</span>
+            <span class="bet-val">৳${p.bet}</span>
+            ${winCol}
+        `;
+        list.appendChild(row);
+    });
+}
+
+function updateFakePlayersLive() {
+    fakePlayers.forEach(p => {
+        if (!p.hasCashedOut && currentMultiplier >= p.cashoutAt && currentMultiplier < targetMultiplier) {
+            p.hasCashedOut = true;
+            p.winAmount = p.bet * p.cashoutAt;
+        }
+    });
+    renderFakePlayers();
 }
 
 function drawPlane(x, y) {
     ctx.save();
     ctx.translate(x, y);
-    ctx.fillStyle = "#e50914"; // Aviator Red
+    ctx.fillStyle = "#e50914";
 
-    // Red Jet Plane Shape
     ctx.beginPath();
     ctx.moveTo(0, 0);
     ctx.lineTo(-25, -8);
@@ -57,7 +109,6 @@ function drawPlane(x, y) {
     ctx.closePath();
     ctx.fill();
 
-    // Propeller / Front
     ctx.fillStyle = "#ffffff";
     ctx.beginPath();
     ctx.arc(3, 0, 3, 0, Math.PI * 2);
@@ -72,7 +123,6 @@ function drawStage(px, py) {
     const startX = 20;
     const startY = canvas.height - 20;
 
-    // Curved Smooth Line
     ctx.beginPath();
     ctx.moveTo(startX, startY);
     ctx.quadraticCurveTo(startX + (px - startX) / 2, startY, px, py);
@@ -80,13 +130,11 @@ function drawStage(px, py) {
     ctx.lineWidth = 4;
     ctx.stroke();
 
-    // Fill under curve
     ctx.lineTo(px, startY);
     ctx.lineTo(startX, startY);
     ctx.fillStyle = "rgba(229, 9, 20, 0.15)";
     ctx.fill();
 
-    // Draw Plane
     drawPlane(px, py);
 }
 
@@ -98,6 +146,10 @@ function drawStaticStage() {
 function handleGameAction() {
     const btn = document.getElementById("main-btn");
     const betVal = parseFloat(document.getElementById("bet-amount").value);
+
+    if (betVal > 10000) {
+        return alert("সর্বোচ্চ বেট সীমা ১০,০০০ টাকা!");
+    }
 
     if (!isPlaying && !hasBetted) {
         if (betVal > balance) return alert("পর্যাপ্ত ব্যালেন্স নেই!");
@@ -125,8 +177,10 @@ function startFlight(betVal) {
     progress = 0;
     document.getElementById("flewText").style.display = "none";
     
-    // Minimum 5.09x and Maximum 10000x multiplier
-    targetMultiplier = (Math.random() * (100 - 5.09) + 5.09).toFixed(2); // Testing range 5.09x-100x for smooth test
+    // Minimum 3.00x and Maximum 100.00x range calculation
+    targetMultiplier = (Math.random() * (100.00 - 3.00) + 3.00).toFixed(2);
+
+    generateFakePlayers();
 
     const multText = document.getElementById("multiplier");
     multText.className = "overlay-multiplier mult-blue";
@@ -143,9 +197,9 @@ function startFlight(betVal) {
             multText.className = "overlay-multiplier mult-purple";
         }
 
-        // Calculate smooth trajectory on canvas
+        updateFakePlayersLive();
+
         const endX = canvas.width - 40;
-        const endY = 40;
         const currentX = 20 + (endX - 20) * progress;
         const currentY = (canvas.height - 20) - ((canvas.height - 60) * Math.pow(progress, 2));
 
