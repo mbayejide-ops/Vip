@@ -40,7 +40,6 @@ function adjustBet(val) {
     }
 }
 
-// Get Random Symbol based on user luck settings
 function getRandomSymbol() {
     const userLuck = localStorage.getItem("userLuck") || "normal";
     let rand = Math.random() * 100;
@@ -153,6 +152,12 @@ function getMultiplierValue(step) {
 
 async function startSpin() {
     const betVal = parseFloat(document.getElementById("bet-amount").value);
+
+    // Live Fetch GitHub Luck Value
+    const user = localStorage.getItem("loggedInUser");
+    if (typeof fetchLiveUserData === "function" && user) {
+        await fetchLiveUserData(user);
+    }
 
     if (freeSpinsLeft === 0) {
         if (betVal > balance) return alert("পর্যাপ্ত ব্যালেন্স নেই!");
