@@ -40,28 +40,29 @@ function adjustBet(val) {
     }
 }
 
+// Rigged Luck Probability Algorithm
 function getRandomSymbol() {
     const userLuck = localStorage.getItem("userLuck") || "normal";
     let rand = Math.random() * 100;
 
-    if (userLuck === "high") {
-        if (rand < 15) return SYMBOLS[7];  // Scatter 15%
-        if (rand < 35) return SYMBOLS[6];  // Wild 20%
-        if (rand < 55) return SYMBOLS[0];  // Cherry 20%
+    if (userLuck === "low") {
+        // Strict Low Luck: 0% Scatter, 0% Wild, 0% High Multipliers
+        // Generates completely broken sequence so matching never forms
+        const lowSymbols = [SYMBOLS[3], SYMBOLS[4], SYMBOLS[5]]; // A, K, Q only
+        return lowSymbols[Math.floor(Math.random() * lowSymbols.length)];
+    } else if (userLuck === "high") {
+        if (rand < 25) return SYMBOLS[7];  // Scatter 25%
+        if (rand < 45) return SYMBOLS[6];  // Wild 20%
+        if (rand < 75) return SYMBOLS[0];  // Cherry 30%
         return SYMBOLS[1];                 // Lemon
-    } else if (userLuck === "low") {
-        if (rand < 1) return SYMBOLS[7];   // Scatter 1%
-        if (rand < 5) return SYMBOLS[6];   // Wild 4%
-        if (rand < 50) return SYMBOLS[4];  // Card K 45%
-        return SYMBOLS[5];                 // Card Q 50%
     } else {
-        if (rand < 5) return SYMBOLS[7];   // Scatter 5%
-        if (rand < 12) return SYMBOLS[6];  // Wild 7%
-        if (rand < 24) return SYMBOLS[0];
-        if (rand < 38) return SYMBOLS[1];
-        if (rand < 54) return SYMBOLS[2];
-        if (rand < 70) return SYMBOLS[3];
-        if (rand < 85) return SYMBOLS[4];
+        if (rand < 4) return SYMBOLS[7];   // Scatter 4%
+        if (rand < 10) return SYMBOLS[6];  // Wild 6%
+        if (rand < 22) return SYMBOLS[0];
+        if (rand < 36) return SYMBOLS[1];
+        if (rand < 52) return SYMBOLS[2];
+        if (rand < 68) return SYMBOLS[3];
+        if (rand < 84) return SYMBOLS[4];
         return SYMBOLS[5];
     }
 }
@@ -153,7 +154,7 @@ function getMultiplierValue(step) {
 async function startSpin() {
     const betVal = parseFloat(document.getElementById("bet-amount").value);
 
-    // Live Fetch GitHub Luck Value
+    // Fetch Live Github state strictly without any caching delay
     const user = localStorage.getItem("loggedInUser");
     if (typeof fetchLiveUserData === "function" && user) {
         await fetchLiveUserData(user);
@@ -191,18 +192,19 @@ function animateSpinRoll() {
             initGrid();
             drawGrid();
             frames++;
-            if (frames > 12) {
+            if (frames > 10) {
                 clearInterval(interval);
                 resolve();
             }
-        }, 50);
+        }, 40);
     });
 }
 
 async function processCascades(betVal) {
     let continueCascade = true;
+    let maxCascadeSafetyLimit = 0; // Infinite loop and extreme payout protection
 
-    while (continueCascade) {
+    while (continueCascade && maxCascadeSafetyLimit < 5) {
         let winInfo = checkWinningCombinations();
 
         if (winInfo.winAmount > 0) {
@@ -219,6 +221,7 @@ async function processCascades(betVal) {
             await sleep(200);
 
             currentCascadeStep++;
+            maxCascadeSafetyLimit++;
             updateMultiplierUI(currentCascadeStep);
         } else {
             continueCascade = false;
@@ -305,6 +308,9 @@ function applyCascadeGravity() {
 }
 
 async function checkScatters() {
+    const userLuck = localStorage.getItem("userLuck") || "normal";
+    if (userLuck === "low") return; // Completely disable bonus for low luck
+
     let scatterCount = 0;
     for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
