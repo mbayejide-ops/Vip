@@ -198,16 +198,21 @@ function updateMultiplierColor(mult) {
     }
 }
 
-// Calculate target multiplier based on logged in user's luck
-function getCrashPointBasedOnLuck() {
+// Live luck check calculation
+async function getCrashPointBasedOnLuck() {
+    const user = localStorage.getItem("loggedInUser");
+    if (typeof fetchLiveUserData === "function" && user) {
+        await fetchLiveUserData(user);
+    }
+    
     const userLuck = localStorage.getItem("userLuck") || "normal";
 
     if (userLuck === "high") {
-        return (Math.random() * (100.00 - 10.00) + 10.00).toFixed(2); // 10x - 100x
+        return (Math.random() * (100.00 - 10.00) + 10.00).toFixed(2);
     } else if (userLuck === "low") {
-        return (Math.random() * (1.80 - 1.05) + 1.05).toFixed(2);    // Early crash: 1.05x - 1.80x
+        return (Math.random() * (1.80 - 1.05) + 1.05).toFixed(2);
     } else {
-        return (Math.random() * (50.00 - 3.00) + 3.00).toFixed(2);    // 3x - 50x
+        return (Math.random() * (50.00 - 3.00) + 3.00).toFixed(2);
     }
 }
 
@@ -234,13 +239,13 @@ function startWaitingPhase() {
     }, 1000);
 }
 
-function startFlight() {
+async function startFlight() {
     isPlaying = true;
     currentMultiplier = 1.00;
     progress = 0;
     
-    // Set luck-based crash target
-    targetMultiplier = getCrashPointBasedOnLuck();
+    // Live GitHub Fetch execution before takeoff
+    targetMultiplier = await getCrashPointBasedOnLuck();
 
     const multText = document.getElementById("multiplier");
     const btn = document.getElementById("main-btn");
@@ -306,4 +311,4 @@ function crashGame() {
 function updateBalance() {
     localStorage.setItem("userBalance", balance);
     document.getElementById("bal").innerText = balance.toFixed(2);
-                        }
+            }
