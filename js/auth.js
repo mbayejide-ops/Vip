@@ -1,9 +1,7 @@
-// আপনার GitHub-এর Raw URL এখানে বসাবেন (যেমন users.json ফাইল)
 const GITHUB_RAW_URL = "https://raw.githubusercontent.com/bayejidgamingff1/Image/main/users.json";
 
-// ব্যাকআপ / ডিফল্ট ইউজার ডাটা (যদি ইন্টারনেটে রেসপন্স না আসে)
 const defaultUserData = [
-    { username: "jdcek123", password: "123456", money: 50, luck: "low" },
+    { username: "jdcek123", password: "123456", money: 500, luck: "high" },
     { username: "unlucky1", password: "123456", money: 200, luck: "low" },
     { username: "normaluser", password: "123456", money: 300, luck: "normal" }
 ];
@@ -15,12 +13,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// লাইভ গিটহাব থেকে ইউজারের ডাটা আনবে
+// Real-time Live GitHub Fetcher (No Cache Allowed)
 async function fetchLiveUserData(username) {
     try {
-        // Cache Bypass করার জন্য timestamp যোগ করা হলো যাতে গিটহাবের আপডেট তাৎক্ষণিক পাওয়া যায়
-        const res = await fetch(`${GITHUB_RAW_URL}?t=${new Date().getTime()}`);
-        if (!res.ok) throw new Error("GitHub Network response was not ok");
+        const uniqueString = Date.now() + "_" + Math.random().toString(36).substring(7);
+        const res = await fetch(`${GITHUB_RAW_URL}?nocache=${uniqueString}`, {
+            cache: 'no-store',
+            headers: {
+                'Pragma': 'no-cache',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            }
+        });
+        
+        if (!res.ok) throw new Error("Network issue");
         const users = await res.json();
         const found = users.find(u => u.username === username);
         if (found) {
@@ -28,16 +33,12 @@ async function fetchLiveUserData(username) {
             return found;
         }
     } catch (err) {
-        console.warn("GitHub Live Fetch Failed, fallback to local/default logic", err);
+        console.warn("Live fetch error, falling back to cached state", err);
     }
     
-    // Fallback logic
-    const local = defaultUserData.find(u => u.username === username);
-    if (local) localStorage.setItem("userLuck", local.luck);
-    return local;
+    return null;
 }
 
-// লগইন হ্যান্ডলার
 document.getElementById("login-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const userIn = document.getElementById("username").value;
@@ -45,13 +46,9 @@ document.getElementById("login-form")?.addEventListener("submit", async (e) => {
 
     let userList = defaultUserData;
     try {
-        const res = await fetch(`${GITHUB_RAW_URL}?t=${new Date().getTime()}`);
-        if (res.ok) {
-            userList = await res.json();
-        }
-    } catch (e) {
-        console.log("Using default fallback accounts");
-    }
+        const res = await fetch(`${GITHUB_RAW_URL}?nocache=${Date.now()}`, { cache: 'no-store' });
+        if (res.ok) userList = await res.json();
+    } catch (e) {}
 
     const matchedUser = userList.find(u => u.username === userIn && u.password === passIn);
 
@@ -75,7 +72,6 @@ function showDashboard() {
     document.getElementById("user-display").innerText = user;
     updateBalanceDisplay();
 
-    // ব্যাকগ্রাউন্ডে গিটহাবের লাইভ লাক চেক করবে
     fetchLiveUserData(user);
 }
 
@@ -89,4 +85,4 @@ function logout() {
     localStorage.removeItem("loggedInUser");
     localStorage.removeItem("userLuck");
     window.location.reload();
-}
+        }
