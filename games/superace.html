@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Ace Slot</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #08080c; color: #ffffff; padding: 10px; display: flex; flex-direction: column; align-items: center; }
+
+        .game-container { width: 100%; max-width: 480px; background: #12131a; border-radius: 12px; overflow: hidden; border: 2px solid #2a2c3d; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+
+        /* Top Bar */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #1a1c29; border-bottom: 1px solid #2d3045; }
+        .logo { color: #ffb400; font-weight: 900; font-size: 20px; text-shadow: 0 0 10px rgba(255, 180, 0, 0.5); }
+        .back-btn { color: #aaa; text-decoration: none; font-size: 14px; font-weight: bold; }
+        .balance-box { background: #000; padding: 5px 12px; border-radius: 20px; border: 1px solid #28a745; color: #28a745; font-weight: bold; font-size: 14px; }
+
+        /* Multiplier Display Header */
+        .multiplier-bar { display: flex; justify-content: space-around; background: #181a26; padding: 8px 0; border-bottom: 2px solid #282a3d; }
+        .mult-step { font-weight: bold; font-size: 14px; color: #666; padding: 4px 12px; border-radius: 15px; border: 1px solid transparent; transition: all 0.3s; }
+        .mult-active { color: #ffb400; background: rgba(255, 180, 0, 0.15); border-color: #ffb400; box-shadow: 0 0 8px rgba(255, 180, 0, 0.4); transform: scale(1.1); }
+
+        /* Free Spin Status Bar */
+        .freespin-status { background: #d9381e; color: #fff; text-align: center; font-weight: bold; font-size: 13px; padding: 4px; display: none; }
+
+        /* Slot Machine Canvas */
+        .stage-container { position: relative; width: 100%; height: 320px; background: #0b0c12; overflow: hidden; }
+        canvas { width: 100%; height: 100%; display: block; }
+
+        /* Win Text Overlay */
+        .win-overlay { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 32px; font-weight: 900; color: #00ff66; text-shadow: 0 0 15px #00ff66, 0 0 30px #000; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+
+        /* Controls Area */
+        .controls-panel { padding: 15px; background: #181a26; display: flex; flex-direction: column; gap: 12px; }
+        .bet-box { background: #0e0f17; padding: 10px 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #292c3f; }
+        .amount-control { display: flex; align-items: center; gap: 10px; }
+        .btn-circle { width: 32px; height: 32px; border-radius: 50%; background: #25283b; color: #fff; border: none; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .btn-circle:active { background: #ffb400; color: #000; }
+        .bet-input { width: 80px; background: transparent; border: none; color: #fff; text-align: center; font-size: 18px; font-weight: bold; }
+
+        .btn-spin { width: 100%; height: 50px; border-radius: 8px; border: none; background: linear-gradient(180deg, #ffb400 0%, #d48800 100%); color: #000; font-size: 20px; font-weight: 900; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 15px rgba(255, 180, 0, 0.4); transition: transform 0.1s; }
+        .btn-spin:disabled { background: #444; color: #888; box-shadow: none; cursor: not-allowed; }
+        .btn-spin:active { transform: scale(0.98); }
+
+        /* Paytable Sheet */
+        .paytable { background: #0e0f17; padding: 10px; border-radius: 8px; font-size: 11px; color: #aaa; border: 1px solid #232536; margin-top: 5px; }
+        .paytable-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 5px; text-align: center; }
+        .pay-card { background: #161824; padding: 4px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div class="top-bar">
+            <a href="../index.html" class="back-btn">❮ Home</a>
+            <div class="logo">SUPER ACE</div>
+            <div class="balance-box">৳<span id="bal">0.00</span></div>
+        </div>
+
+        <!-- Multipliers Ribbon -->
+        <div class="multiplier-bar">
+            <div id="m1" class="mult-step mult-active">x1</div>
+            <div id="m2" class="mult-step">x2</div>
+            <div id="m3" class="mult-step">x3</div>
+            <div id="m5" class="mult-step">x5</div>
+        </div>
+
+        <div id="freespin-bar" class="freespin-status">FREE SPINS REMAINING: <span id="fs-count">0</span></div>
+
+        <!-- Slot Canvas Stage -->
+        <div class="stage-container">
+            <canvas id="slotCanvas"></canvas>
+            <div id="win-text" class="win-overlay">+৳0</div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-panel">
+            <div class="bet-box">
+                <span style="font-size: 13px; color: #aaa; font-weight: bold;">TOTAL BET</span>
+                <div class="amount-control">
+                    <button class="btn-circle" onclick="adjustBet(-10)">-</button>
+                    <input type="number" id="bet-amount" class="bet-input" value="10" readonly>
+                    <button class="btn-circle" onclick="adjustBet(10)">+</button>
+                </div>
+            </div>
+            <button id="spin-btn" class="btn-spin" onclick="startSpin()">SPIN</button>
+
+            <!-- Paytable Info -->
+            <div class="paytable">
+                <strong style="color:#fff;">Paytable (3/4/5 Matching Reels):</strong>
+                <div class="paytable-grid">
+                    <div class="pay-card">🍒 10/25/100</div>
+                    <div class="pay-card">🍋 8/20/80</div>
+                    <div class="pay-card">🔔 5/15/50</div>
+                    <div class="pay-card">A 3/10/30</div>
+                    <div class="pay-card">K 2/8/20</div>
+                    <div class="pay-card">Q 1/5/10</div>
+                    <div class="pay-card">🃏 WILD</div>
+                    <div class="pay-card">⭐ SCATTER</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/superace.js"></script>
+</body>
+  </html>
