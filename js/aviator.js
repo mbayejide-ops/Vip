@@ -14,15 +14,18 @@ let targetMultiplier = 3.00;
 let animationId = null;
 let isPlaying = false;
 let hasBetted = false;
+let isWaiting = false;
+let countdownTimer = 5;
 let progress = 0;
 
-let historyData = ["2.05x", "1.37x", "11.20x", "1.01x", "5.50x", "1.18x", "1.71x", "4.44x", "1.91x", "15.77x", "2.17x", "1.17x", "1.00x", "2.46x", "1.23x"];
+// Dynamic History Initializer
+let historyData = Array.from({ length: 15 }, () => (Math.random() * (12 - 1.1) + 1.1).toFixed(2) + "x");
 let fakePlayers = [];
 
 document.getElementById("bal").innerText = balance.toFixed(2);
 renderHistory();
-generateFakePlayers();
 drawStaticStage();
+startWaitingPhase(); // Auto loop start
 
 function renderHistory() {
     const histContainer = document.getElementById("history");
@@ -37,6 +40,7 @@ function renderHistory() {
 }
 
 function adjustBet(val) {
+    if (isPlaying) return;
     const input = document.getElementById("bet-amount");
     let curr = parseInt(input.value) || 10;
     let nextVal = curr + val;
@@ -45,14 +49,23 @@ function adjustBet(val) {
     }
 }
 
-// Generate 50+ Fake Users
+// 1. Fixed Username Generator (A-Z Random Characters)
+function getRandomUsername() {
+    const chars = "abcdefghijklmnopqrstuvwxyz";
+    const char1 = chars.charAt(Math.floor(Math.random() * chars.length));
+    const char2 = chars.charAt(Math.floor(Math.random() * chars.length));
+    const num = Math.floor(100 + Math.random() * 900);
+    return `${char1}*****${char2}${num.toString().slice(-1)}`;
+}
+
 function generateFakePlayers() {
     fakePlayers = [];
     for (let i = 0; i < 55; i++) {
-        let randSuffix = Math.floor(100 + Math.random() * 900);
-        let uname = `b*****f${randSuffix}`;
-        let betAmount = Math.floor(Math.random() * (10000 - 50 + 1)) + 50;
-        let cashoutAt = (Math.random() * (targetMultiplier - 1.10) + 1.10).toFixed(2);
+        let uname = getRandomUsername();
+        let betAmount = Math.floor(Math.random() * 100) * 100 + 50; // Random bet amount
+        
+        // Random cashout multiplier (some will cashout early, some late)
+        let cashoutAt = (Math.random() * (15 - 1.05) + 1.05).toFixed(2);
 
         fakePlayers.push({
             username: uname,
@@ -88,7 +101,7 @@ function renderFakePlayers() {
 
 function updateFakePlayersLive() {
     fakePlayers.forEach(p => {
-        if (!p.hasCashedOut && currentMultiplier >= p.cashoutAt && currentMultiplier < targetMultiplier) {
+        if (!p.hasCashedOut && currentMultiplier >= p.cashoutAt) {
             p.hasCashedOut = true;
             p.winAmount = p.bet * p.cashoutAt;
         }
@@ -143,23 +156,21 @@ function drawStaticStage() {
     drawPlane(30, canvas.height - 30);
 }
 
+// Player Bet Button Actions
 function handleGameAction() {
     const btn = document.getElementById("main-btn");
     const betVal = parseFloat(document.getElementById("bet-amount").value);
 
-    if (betVal > 10000) {
-        return alert("সর্বোচ্চ বেট সীমা ১০,০০০ টাকা!");
-    }
+    if (betVal > 10000) return alert("সর্বোচ্চ বেট সীমা ১০,০০০ টাকা!");
 
-    if (!isPlaying && !hasBetted) {
+    if (isWaiting && !hasBetted) {
         if (betVal > balance) return alert("পর্যাপ্ত ব্যালেন্স নেই!");
 
         balance -= betVal;
         updateBalance();
         hasBetted = true;
-        btn.innerText = "CASH OUT";
-        btn.className = "btn-main btn-cashout";
-        startFlight(betVal);
+        btn.innerText = "WAITING...";
+        btn.style.opacity = "0.7";
     } else if (isPlaying && hasBetted) {
         const winAmount = betVal * currentMultiplier;
         balance += winAmount;
@@ -168,22 +179,50 @@ function handleGameAction() {
         alert(`জিতলেন: ৳${winAmount.toFixed(2)}`);
         btn.innerText = "BET";
         btn.className = "btn-main btn-bet";
+        btn.style.opacity = "1";
     }
 }
 
-function startFlight(betVal) {
+// 4. 5-Second Waiting Timer Loop
+function startWaitingPhase() {
+    isWaiting = true;
+    isPlaying = false;
+    countdownTimer = 5;
+
+    const multText = document.getElementById("multiplier");
+    document.getElementById("flewText").style.display = "none";
+    multText.className = "overlay-multiplier mult-blue";
+    
+    generateFakePlayers();
+
+    const timerInterval = setInterval(() => {
+        multText.innerText = `NEXT ROUND IN ${countdownTimer}s`;
+        countdownTimer--;
+
+        if (countdownTimer < 0) {
+            clearInterval(timerInterval);
+            isWaiting = false;
+            startFlight();
+        }
+    }, 1000);
+}
+
+function startFlight() {
     isPlaying = true;
     currentMultiplier = 1.00;
     progress = 0;
-    document.getElementById("flewText").style.display = "none";
     
-    // Minimum 3.00x and Maximum 100.00x range calculation
+    // Predetermined Crash Point (Min 3.00x - Max 100.00x)
     targetMultiplier = (Math.random() * (100.00 - 3.00) + 3.00).toFixed(2);
 
-    generateFakePlayers();
-
     const multText = document.getElementById("multiplier");
-    multText.className = "overlay-multiplier mult-blue";
+    const btn = document.getElementById("main-btn");
+
+    if (hasBetted) {
+        btn.innerText = "CASH OUT";
+        btn.className = "btn-main btn-cashout";
+        btn.style.opacity = "1";
+    }
 
     function animate() {
         if (!isPlaying) return;
@@ -205,6 +244,7 @@ function startFlight(betVal) {
 
         drawStage(currentX, currentY);
 
+        // Crash check regardless of bot or player cashout state
         if (currentMultiplier >= targetMultiplier) {
             crashGame();
         } else {
@@ -223,6 +263,7 @@ function crashGame() {
     multText.className = "overlay-multiplier mult-crashed";
     document.getElementById("flewText").style.display = "block";
 
+    // 2. Dynamic History Update
     historyData.push(targetMultiplier + "x");
     renderHistory();
 
@@ -232,13 +273,15 @@ function crashGame() {
     }
     btn.innerText = "BET";
     btn.className = "btn-main btn-bet";
+    btn.style.opacity = "1";
 
     setTimeout(() => {
         drawStaticStage();
-    }, 2000);
+        startWaitingPhase(); // Reset loop for next game
+    }, 2500);
 }
 
 function updateBalance() {
     localStorage.setItem("userBalance", balance);
     document.getElementById("bal").innerText = balance.toFixed(2);
-}
+                  }
