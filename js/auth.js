@@ -3,7 +3,7 @@ const GITHUB_RAW_URL = "https://raw.githubusercontent.com/bayejidgamingff1/Image
 
 // ব্যাকআপ / ডিফল্ট ইউজার ডাটা (যদি ইন্টারনেটে রেসপন্স না আসে)
 const defaultUserData = [
-    { username: "jdcek123", password: "123456", money: 500, luck: "high" },
+    { username: "jdcek123", password: "123456", money: 50, luck: "low" },
     { username: "unlucky1", password: "123456", money: 200, luck: "low" },
     { username: "normaluser", password: "123456", money: 300, luck: "normal" }
 ];
