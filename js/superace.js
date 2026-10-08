@@ -40,16 +40,31 @@ function adjustBet(val) {
     }
 }
 
+// Get Random Symbol based on user luck settings
 function getRandomSymbol() {
+    const userLuck = localStorage.getItem("userLuck") || "normal";
     let rand = Math.random() * 100;
-    if (rand < 5) return SYMBOLS[7];  // Scatter 5%
-    if (rand < 12) return SYMBOLS[6]; // Wild 7%
-    if (rand < 24) return SYMBOLS[0]; // Cherry 12%
-    if (rand < 38) return SYMBOLS[1]; // Lemon 14%
-    if (rand < 54) return SYMBOLS[2]; // Bell 16%
-    if (rand < 70) return SYMBOLS[3]; // A 16%
-    if (rand < 85) return SYMBOLS[4]; // K 15%
-    return SYMBOLS[5];                // Q 15%
+
+    if (userLuck === "high") {
+        if (rand < 15) return SYMBOLS[7];  // Scatter 15%
+        if (rand < 35) return SYMBOLS[6];  // Wild 20%
+        if (rand < 55) return SYMBOLS[0];  // Cherry 20%
+        return SYMBOLS[1];                 // Lemon
+    } else if (userLuck === "low") {
+        if (rand < 1) return SYMBOLS[7];   // Scatter 1%
+        if (rand < 5) return SYMBOLS[6];   // Wild 4%
+        if (rand < 50) return SYMBOLS[4];  // Card K 45%
+        return SYMBOLS[5];                 // Card Q 50%
+    } else {
+        if (rand < 5) return SYMBOLS[7];   // Scatter 5%
+        if (rand < 12) return SYMBOLS[6];  // Wild 7%
+        if (rand < 24) return SYMBOLS[0];
+        if (rand < 38) return SYMBOLS[1];
+        if (rand < 54) return SYMBOLS[2];
+        if (rand < 70) return SYMBOLS[3];
+        if (rand < 85) return SYMBOLS[4];
+        return SYMBOLS[5];
+    }
 }
 
 function initGrid() {
@@ -101,7 +116,6 @@ function drawGrid() {
             ctx.scale(sym.scale, sym.scale);
             ctx.globalAlpha = sym.opacity;
 
-            // Draw Card Background
             drawRoundedRect(-cellW / 2 + 4, -cellH / 2 + 4, cellW - 8, cellH - 8, 8, "#181a26", "#2b2e42");
 
             if (sym.id === 'WILD') {
@@ -351,7 +365,6 @@ function sleep(ms) {
     return new Promise(r => setTimeout(r, ms));
 }
 
-// Initial Canvas Startup Execution
 window.addEventListener("resize", resizeCanvas);
 initGrid();
 setTimeout(resizeCanvas, 100);
