@@ -6,11 +6,12 @@ const gamesList = [
         link: "games/aviator.html"
     },
     {
-        id: "superace",
-        name: "সুপার এস",
-        icon: "https://via.placeholder.com/150/FF0000/FFFFFF?text=Super+Ace",
-        link: "#"
-    },
+    id: "superace",
+    name: "সুপার এস",
+    icon: "https://raw.githubusercontent.com/bayejidgamingff1/Image/main/Ace.jpeg",
+    link: "games/superace.html"
+}
+,
     {
         id: "highflyer",
         name: "হাই ফ্লায়ার",
