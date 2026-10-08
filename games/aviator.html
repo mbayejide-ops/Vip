@@ -20,17 +20,23 @@
         .history-wrapper { background: #0a0a0a; padding: 6px 10px; border-bottom: 1px solid #1a1a1a; display: flex; gap: 6px; overflow-x: auto; white-space: nowrap; }
         .history-wrapper::-webkit-scrollbar { display: none; }
         .badge { padding: 3px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; background: #1a1a1a; }
-        .blue { color: #34b4ff; border: 1px solid rgba(52, 180, 255, 0.3); }
-        .purple { color: #913ffb; border: 1px solid rgba(145, 63, 251, 0.3); }
+        
+        /* Badge Colors */
+        .badge-blue { color: #34b4ff; border: 1px solid rgba(52, 180, 255, 0.4); }
+        .badge-purple { color: #913ffb; border: 1px solid rgba(145, 63, 251, 0.4); }
+        .badge-red { color: #e50914; border: 1px solid rgba(229, 9, 20, 0.4); }
 
         /* Main Game Stage (Canvas) */
         .stage-container { position: relative; width: 100%; height: 240px; background: radial-gradient(circle, #1a1a2e 0%, #000000 100%); overflow: hidden; }
         canvas { width: 100%; height: 100%; display: block; }
         
-        .overlay-multiplier { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); font-size: 45px; font-weight: 800; text-shadow: 0 0 15px rgba(0,0,0,0.8); }
-        .mult-blue { color: #ffffff; }
-        .mult-purple { color: #c084fc; }
-        .mult-crashed { color: #e50914; }
+        .overlay-multiplier { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); font-size: 40px; font-weight: 800; text-shadow: 0 0 15px rgba(0,0,0,0.8); }
+        
+        /* Multiplier Text Colors */
+        .mult-blue { color: #34b4ff; text-shadow: 0 0 15px rgba(52, 180, 255, 0.6); }
+        .mult-purple { color: #913ffb; text-shadow: 0 0 15px rgba(145, 63, 251, 0.6); }
+        .mult-red { color: #e50914; text-shadow: 0 0 15px rgba(229, 9, 20, 0.6); }
+        .mult-crashed { color: #ff3333; text-shadow: 0 0 15px rgba(255, 51, 51, 0.8); }
 
         .flew-away-text { position: absolute; top: 18%; left: 50%; transform: translateX(-50%); color: #e50914; font-size: 14px; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; }
 
@@ -100,4 +106,4 @@
 
     <script src="../js/aviator.js"></script>
 </body>
-    </html>
+</html>
