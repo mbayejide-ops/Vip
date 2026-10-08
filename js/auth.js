@@ -4,7 +4,7 @@ const mockUserData = [
         username: "jdcek123",  // High Luck (Behi jitbe)
         password: "123456",
         money: 500,
-        luck: "low"
+        luck: "high"
     },
     {
         username: "unlucky1",  // Low Luck (Harbe)
