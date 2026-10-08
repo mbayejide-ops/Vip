@@ -2,11 +2,11 @@ const canvas = document.getElementById("slotCanvas");
 const ctx = canvas.getContext("2d");
 
 function resizeCanvas() {
-    canvas.width = canvas.parentElement.clientWidth;
-    canvas.height = canvas.parentElement.clientHeight;
+    const stage = document.getElementById("stage-box");
+    canvas.width = stage.clientWidth || 400;
+    canvas.height = stage.clientHeight || 320;
+    drawGrid();
 }
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
 
 let balance = parseFloat(localStorage.getItem("userBalance")) || 500;
 let isSpinning = false;
@@ -29,8 +29,6 @@ const SYMBOLS = [
 ];
 
 document.getElementById("bal").innerText = balance.toFixed(2);
-initGrid();
-drawGrid();
 
 function adjustBet(val) {
     if (isSpinning) return;
@@ -65,6 +63,26 @@ function initGrid() {
     }
 }
 
+function drawRoundedRect(x, y, width, height, radius, fillStyle, strokeStyle) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    
+    ctx.fillStyle = fillStyle;
+    ctx.fill();
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+}
+
 function drawGrid() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const cellW = canvas.width / COLS;
@@ -72,8 +90,8 @@ function drawGrid() {
 
     for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
+            if (!grid[r] || !grid[r][c]) continue;
             const sym = grid[r][c];
-            if (!sym) continue;
 
             const x = c * cellW + cellW / 2;
             const y = r * cellH + cellH / 2;
@@ -83,13 +101,8 @@ function drawGrid() {
             ctx.scale(sym.scale, sym.scale);
             ctx.globalAlpha = sym.opacity;
 
-            ctx.fillStyle = "#181a26";
-            ctx.strokeStyle = "#2b2e42";
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.roundRect(-cellW / 2 + 4, -cellH / 2 + 4, cellW - 8, cellH - 8, 8);
-            ctx.fill();
-            ctx.stroke();
+            // Draw Card Background
+            drawRoundedRect(-cellW / 2 + 4, -cellH / 2 + 4, cellW - 8, cellH - 8, 8, "#181a26", "#2b2e42");
 
             if (sym.id === 'WILD') {
                 ctx.fillStyle = "#ffb400";
@@ -210,7 +223,7 @@ function checkWinningCombinations() {
             let colHasMatch = false;
             for (let r = 0; r < ROWS; r++) {
                 let cellSym = grid[r][c];
-                if (cellSym.id === sym.id || cellSym.id === 'WILD') {
+                if (cellSym && (cellSym.id === sym.id || cellSym.id === 'WILD')) {
                     colHasMatch = true;
                     positions.push({ r, c });
                 }
@@ -233,7 +246,7 @@ function animateDisappear(positions) {
         let steps = 0;
         const interval = setInterval(() => {
             positions.forEach(pos => {
-                if (grid[pos.r][pos.c]) {
+                if (grid[pos.r] && grid[pos.r][pos.c]) {
                     grid[pos.r][pos.c].scale -= 0.1;
                     grid[pos.r][pos.c].opacity -= 0.1;
                 }
@@ -243,7 +256,7 @@ function animateDisappear(positions) {
             if (steps >= 10) {
                 clearInterval(interval);
                 positions.forEach(pos => {
-                    grid[pos.r][pos.c] = null;
+                    if (grid[pos.r]) grid[pos.r][pos.c] = null;
                 });
                 resolve();
             }
@@ -272,12 +285,11 @@ function applyCascadeGravity() {
     }
 }
 
-// In-Game Smooth Animated Bonus Popup Handler
 async function checkScatters() {
     let scatterCount = 0;
     for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
-            if (grid[r][c] && grid[r][c].id === 'SCATTER') scatterCount++;
+            if (grid[r] && grid[r][c] && grid[r][c].id === 'SCATTER') scatterCount++;
         }
     }
 
@@ -307,9 +319,39 @@ function showAnimatedBonusBanner(scatters, spins) {
 
         setTimeout(() => {
             overlay.classList.remove("active");
-            setTimeout(resolve, 400); // Allow smooth fade out transition
+            setTimeout(resolve, 400);
         }, 2000);
     });
 }
 
 function updateFreeSpinUI() {
+    const bar = document.getElementById("freespin-bar");
+    const count = document.getElementById("fs-count");
+    if (freeSpinsLeft > 0) {
+        bar.style.display = "block";
+        count.innerText = freeSpinsLeft;
+    } else {
+        bar.style.display = "none";
+    }
+}
+
+function showWinText(text) {
+    const elem = document.getElementById("win-text");
+    elem.innerText = text;
+    elem.style.opacity = "1";
+    setTimeout(() => { elem.style.opacity = "0"; }, 1200);
+}
+
+function updateBalance() {
+    localStorage.setItem("userBalance", balance);
+    document.getElementById("bal").innerText = balance.toFixed(2);
+}
+
+function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+}
+
+// Initial Canvas Startup Execution
+window.addEventListener("resize", resizeCanvas);
+initGrid();
+setTimeout(resizeCanvas, 100);
