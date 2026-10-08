@@ -15,9 +15,8 @@ let currentCascadeStep = 0;
 
 const COLS = 5;
 const ROWS = 4;
-let grid = []; // Holds 5x4 matrix of symbols
+let grid = [];
 
-// Symbols & Value Multipliers (Relative to Base Bet)
 const SYMBOLS = [
     { id: 'CHERRY', icon: '🍒', pay: [0, 0, 0, 1.0, 2.5, 10.0] },
     { id: 'LEMON',  icon: '🍋', pay: [0, 0, 0, 0.8, 2.0, 8.0] },
@@ -84,7 +83,6 @@ function drawGrid() {
             ctx.scale(sym.scale, sym.scale);
             ctx.globalAlpha = sym.opacity;
 
-            // Cell Background Card
             ctx.fillStyle = "#181a26";
             ctx.strokeStyle = "#2b2e42";
             ctx.lineWidth = 2;
@@ -93,7 +91,6 @@ function drawGrid() {
             ctx.fill();
             ctx.stroke();
 
-            // Symbol Rendering
             if (sym.id === 'WILD') {
                 ctx.fillStyle = "#ffb400";
             } else if (sym.id === 'SCATTER') {
@@ -127,7 +124,6 @@ function getMultiplierValue(step) {
     return 5;
 }
 
-// Spin Flow
 async function startSpin() {
     const betVal = parseFloat(document.getElementById("bet-amount").value);
 
@@ -145,16 +141,12 @@ async function startSpin() {
     currentCascadeStep = 0;
     updateMultiplierUI(0);
 
-    // Roll Reel Animation
     await animateSpinRoll();
-
-    // Cascading Win Check Loop
     await processCascades(betVal);
 
     isSpinning = false;
     document.getElementById("spin-btn").disabled = false;
 
-    // Check Free Spins Loop
     if (freeSpinsLeft > 0) {
         setTimeout(startSpin, 1000);
     }
@@ -189,10 +181,7 @@ async function processCascades(betVal) {
             updateBalance();
             showWinText(`+৳${totalCascadeWin.toFixed(2)} (${mult}x)`);
 
-            // Disappear Winning Symbols
             await animateDisappear(winInfo.winningPositions);
-
-            // Cascade Fall down
             applyCascadeGravity();
             drawGrid();
             await sleep(200);
@@ -204,15 +193,13 @@ async function processCascades(betVal) {
         }
     }
 
-    // Check Scatter trigger (Free Spins)
-    checkScatters();
+    await checkScatters();
 }
 
 function checkWinningCombinations() {
     let winningPositions = [];
     let baseWinRatio = 0;
 
-    // Check Left to Right Match logic
     SYMBOLS.forEach(sym => {
         if (sym.id === 'WILD' || sym.id === 'SCATTER') return;
 
@@ -229,7 +216,7 @@ function checkWinningCombinations() {
                 }
             }
             if (colHasMatch) matchCols++;
-            else break; // Combination broken
+            else break;
         }
 
         if (matchCols >= 3) {
@@ -255,7 +242,6 @@ function animateDisappear(positions) {
             steps++;
             if (steps >= 10) {
                 clearInterval(interval);
-                // Clear out items
                 positions.forEach(pos => {
                     grid[pos.r][pos.c] = null;
                 });
@@ -267,7 +253,6 @@ function animateDisappear(positions) {
 
 function applyCascadeGravity() {
     for (let c = 0; c < COLS; c++) {
-        // Shift existing down
         for (let r = ROWS - 1; r >= 0; r--) {
             if (grid[r][c] === null) {
                 for (let above = r - 1; above >= 0; above--) {
@@ -279,7 +264,6 @@ function applyCascadeGravity() {
                 }
             }
         }
-        // Fill empty top positions
         for (let r = 0; r < ROWS; r++) {
             if (grid[r][c] === null) {
                 grid[r][c] = { ...getRandomSymbol(), opacity: 1, scale: 1 };
@@ -288,7 +272,8 @@ function applyCascadeGravity() {
     }
 }
 
-function checkScatters() {
+// In-Game Smooth Animated Bonus Popup Handler
+async function checkScatters() {
     let scatterCount = 0;
     for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
@@ -296,43 +281,35 @@ function checkScatters() {
         }
     }
 
-    if (scatterCount >= 5) {
-        freeSpinsLeft += 20;
-        alert("🎉 5 SCATTERS! 20 Bonus Free Spins Won!");
-    } else if (scatterCount >= 4) {
-        freeSpinsLeft += 10;
-        alert("🎉 4 SCATTERS! 10 Bonus Free Spins Won!");
-    } else if (scatterCount === 3) {
-        freeSpinsLeft += 5;
-        alert("🎉 3 SCATTERS! 5 Bonus Free Spins Won!");
+    let wonSpins = 0;
+    if (scatterCount >= 5) wonSpins = 20;
+    else if (scatterCount === 4) wonSpins = 10;
+    else if (scatterCount === 3) wonSpins = 5;
+
+    if (wonSpins > 0) {
+        freeSpinsLeft += wonSpins;
+        await showAnimatedBonusBanner(scatterCount, wonSpins);
     }
 
     updateFreeSpinUI();
 }
 
+function showAnimatedBonusBanner(scatters, spins) {
+    return new Promise(resolve => {
+        const overlay = document.getElementById("bonus-overlay");
+        const titleElem = document.getElementById("bonus-scatters-count");
+        const spinsElem = document.getElementById("bonus-spins-val");
+
+        titleElem.innerText = `🎉 ${scatters} SCATTERS!`;
+        spinsElem.innerText = `${spins} FREE SPINS`;
+
+        overlay.classList.add("active");
+
+        setTimeout(() => {
+            overlay.classList.remove("active");
+            setTimeout(resolve, 400); // Allow smooth fade out transition
+        }, 2000);
+    });
+}
+
 function updateFreeSpinUI() {
-    const bar = document.getElementById("freespin-bar");
-    const count = document.getElementById("fs-count");
-    if (freeSpinsLeft > 0) {
-        bar.style.display = "block";
-        count.innerText = freeSpinsLeft;
-    } else {
-        bar.style.display = "none";
-    }
-}
-
-function showWinText(text) {
-    const elem = document.getElementById("win-text");
-    elem.innerText = text;
-    elem.style.opacity = "1";
-    setTimeout(() => { elem.style.opacity = "0"; }, 1200);
-}
-
-function updateBalance() {
-    localStorage.setItem("userBalance", balance);
-    document.getElementById("bal").innerText = balance.toFixed(2);
-}
-
-function sleep(ms) {
-    return new Promise(r => setTimeout(r, ms));
-      }
