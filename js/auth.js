@@ -1,12 +1,9 @@
 // Supabase Credentials
 const SUPABASE_URL = "https://gyqzwqcprlksidsicsvj.supabase.co";
-const SUPABASE_ANON_KEY = "Sb_publishable_EJ_JT0Z3_5RFxyBWDGfPNg_7QdwaWTD";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5cXp3cWNwcmxrc2lkc2ljc3ZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE1Mzk5MzIsImV4cCI6MjEwNzExNTkzMn0.ZZfy3punSEpSnNCt4ehcQpVlnvfmEGKGuHm1xllLvxI";
 
 // Supabase Client Initialize
-let supabase;
-if (window.supabase) {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-}
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let activeWalletAction = "deposit";
 
@@ -36,26 +33,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-// Direct REST Fallback Helper Function
-async function fetchSupabase(table, params = "") {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}${params}`, {
-        headers: {
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-            "Content-Type": "application/json",
-            "Prefer": "return=representation"
-        }
-    });
-    if (!res.ok) throw new Error("API Fetch Error");
-    return await res.json();
-}
-
-// Sync User Realtime Balance & Luck
+// Sync User Realtime Balance & Luck from Supabase
 async function syncUserData(username) {
     try {
-        const users = await fetchSupabase("users", `?username=eq.${username}`);
-        if (users && users.length > 0) {
-            const data = users[0];
+        const { data, error } = await supabase
+            .from('users')
+            .select('money, luck')
+            .eq('username', username)
+            .maybeSingle();
+
+        if (data && !error) {
             localStorage.setItem("userLuck", data.luck || "low");
             localStorage.setItem("userBalance", data.money || 0);
             updateBalanceDisplay();
@@ -75,10 +62,20 @@ document.getElementById("login-form")?.addEventListener("submit", async (e) => {
     const passwordInput = document.getElementById("password").value.trim();
 
     try {
-        const users = await fetchSupabase("users", `?username=eq.${usernameInput}&password=eq.${passwordInput}`);
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('username', usernameInput)
+            .eq('password', passwordInput)
+            .maybeSingle();
 
-        if (users && users.length > 0) {
-            const data = users[0];
+        if (error) {
+            console.error("Supabase Error:", error);
+            errorMsg.innerText = "ডাটাবেজ কানেকশনে সমস্যা হয়েছে!";
+            return;
+        }
+
+        if (data) {
             localStorage.setItem("loggedInUser", data.username);
             localStorage.setItem("userLuck", data.luck || "low");
             localStorage.setItem("userBalance", data.money || 0);
@@ -104,36 +101,35 @@ document.getElementById("signup-form")?.addEventListener("submit", async (e) => 
 
     try {
         // Check Existing User
-        const existingUsers = await fetchSupabase("users", `?username=eq.${regUser}`);
+        const { data: existingUser } = await supabase
+            .from('users')
+            .select('username')
+            .eq('username', regUser)
+            .maybeSingle();
 
-        if (existingUsers && existingUsers.length > 0) {
+        if (existingUser) {
             errorMsg.innerText = "এই ইউজারনেম দিয়ে অলরেডি অ্যাকাউন্ট আছে!";
             return;
         }
 
-        // Insert New User via Direct REST API
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/users`, {
-            method: "POST",
-            headers: {
-                "apikey": SUPABASE_ANON_KEY,
-                "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-                "Content-Type": "application/json",
-                "Prefer": "return=representation"
-            },
-            body: JSON.stringify([{ username: regUser, password: regPass, money: 0, luck: "low" }])
-        });
+        // Insert New User with default "low" luck
+        const { data, error } = await supabase
+            .from('users')
+            .insert([
+                { username: regUser, password: regPass, money: 0, luck: "low" }
+            ])
+            .select()
+            .single();
 
-        const createdData = await res.json();
-
-        if (!res.ok || !createdData || createdData.length === 0) {
+        if (error) {
+            console.error("Signup Error:", error);
             errorMsg.innerText = "রেজিস্ট্রেশন করতে সমস্যা হয়েছে!";
             return;
         }
 
-        const newUser = createdData[0];
-        localStorage.setItem("loggedInUser", newUser.username);
-        localStorage.setItem("userLuck", newUser.luck || "low");
-        localStorage.setItem("userBalance", newUser.money || 0);
+        localStorage.setItem("loggedInUser", data.username);
+        localStorage.setItem("userLuck", data.luck || "low");
+        localStorage.setItem("userBalance", data.money || 0);
 
         errorMsg.innerText = "";
         alert("অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!");
@@ -196,16 +192,16 @@ window.handleWalletAction = async function() {
         return alert("পর্যাপ্ত ব্যালেন্স নেই!");
     }
 
-    // Insert Transaction
-    await fetch(`${SUPABASE_URL}/rest/v1/transactions`, {
-        method: "POST",
-        headers: {
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify([{ username: username, type: activeWalletAction, amount: amount, method: method, account_number: account }])
-    });
+    // Save transaction to Supabase
+    const { error: txErr } = await supabase
+        .from('transactions')
+        .insert([
+            { username: username, type: activeWalletAction, amount: amount, method: method, account_number: account }
+        ]);
+
+    if (txErr) {
+        return alert("লেনদেন জমা দেওয়া যায়নি!");
+    }
 
     if (activeWalletAction === "deposit") {
         currentBal += amount;
@@ -213,16 +209,11 @@ window.handleWalletAction = async function() {
         currentBal -= amount;
     }
 
-    // Update Balance
-    await fetch(`${SUPABASE_URL}/rest/v1/users?username=eq.${username}`, {
-        method: "PATCH",
-        headers: {
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ money: currentBal })
-    });
+    // Update user balance in Supabase
+    await supabase
+        .from('users')
+        .update({ money: currentBal })
+        .eq('username', username);
 
     localStorage.setItem("userBalance", currentBal);
     updateBalanceDisplay();
