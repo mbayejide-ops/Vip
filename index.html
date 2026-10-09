@@ -3,42 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gaming Platform</title>
+    <title>8KBD Gaming Platform</title>
     <link rel="stylesheet" href="css/style.css">
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-    <!-- Login Section -->
-    <div id="login-section" class="auth-container">
-        <h2>8KBD Gaming Login</h2>
-        <form id="login-form">
-            <input type="text" id="username" placeholder="ইউজারনেম" required>
-            <input type="password" id="password" placeholder="পাসওয়ার্ড" required>
-            <button type="submit">লগইন</button>
-        </form>
+    <!-- Auth Container -->
+    <div id="auth-container" class="auth-container">
+        <!-- Login Form -->
+        <div id="login-box">
+            <h2>8KBD Gaming Login</h2>
+            <form id="login-form">
+                <input type="text" id="username" placeholder="ইউজারনেম" required>
+                <input type="password" id="password" placeholder="পাসওয়ার্ড" required>
+                <button type="submit">লগইন</button>
+            </form>
+            <p class="switch-text">অ্যাকাউন্ট নেই? <a href="#" onclick="toggleAuthMode('signup')">রেজিস্টার করুন</a></p>
+        </div>
+
+        <!-- Registration Form -->
+        <div id="signup-box" class="hidden">
+            <h2>নতুন অ্যাকাউন্ট তৈরি করুন</h2>
+            <form id="signup-form">
+                <input type="text" id="reg-username" placeholder="নতুন ইউজারনেম" required>
+                <input type="password" id="reg-password" placeholder="নতুন পাসওয়ার্ড" required>
+                <button type="submit" class="btn-signup">রেজিস্টার</button>
+            </form>
+            <p class="switch-text">অ্যাকাউন্ট আছে? <a href="#" onclick="toggleAuthMode('login')">লগইন করুন</a></p>
+        </div>
+
         <p id="error-msg" class="error"></p>
     </div>
 
-    <!-- Main Dashboard / Home Section -->
+    <!-- Main Dashboard Section -->
     <div id="dashboard-section" class="hidden">
         <header class="navbar">
             <div class="logo">8KBD</div>
             <div class="user-info">
                 <span id="user-display"></span> | 
-                <span class="balance">৳<span id="balance-display">0</span> BDT</span>
+                <span class="balance">৳<span id="balance-display">0.00</span> BDT</span>
             </div>
-            <button onclick="logout()" class="logout-btn">লগআউট</button>
+            <div class="wallet-buttons">
+                <button onclick="openModal('deposit')" class="btn-wallet dep">Deposit</button>
+                <button onclick="openModal('withdraw')" class="btn-wallet wd">Withdraw</button>
+                <button onclick="logout()" class="logout-btn">লগআউট</button>
+            </div>
         </header>
 
         <main class="main-content">
             <h3>গরম গেমসমূহ</h3>
-            <div class="games-grid" id="games-grid">
-                <!-- JavaScript দিয়ে গেমগুলোর কার্ড ডাইনামিকভাবে লোড হবে -->
-            </div>
+            <div class="games-grid" id="games-grid"></div>
         </main>
+    </div>
+
+    <!-- Deposit & Withdraw Modal -->
+    <div id="wallet-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h3 id="modal-title">Deposit</h3>
+            
+            <div class="modal-body">
+                <label>পেমেন্ট মেথড বেছে নিন:</label>
+                <select id="payment-method">
+                    <option value="bkash">bKash Personal</option>
+                    <option value="nagad">Nagad Personal</option>
+                    <option value="rocket">Rocket</option>
+                </select>
+
+                <input type="number" id="wallet-amount" placeholder="পরিমাণ (৳)" min="100">
+                <input type="text" id="wallet-account" placeholder="আপনার হিসাব/মোবাইল নম্বর">
+                
+                <button id="modal-submit-btn" onclick="handleWalletAction()">জমা দিন</button>
+            </div>
+        </div>
     </div>
 
     <script src="js/auth.js"></script>
     <script src="js/app.js"></script>
 </body>
-</html>
+    </html>
